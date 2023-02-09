@@ -51,8 +51,12 @@ enum board_init_status initialize_default_board(int** cells_p, size_t* width_p,
         cells[i * 20 + 20 - 1] = FLAG_WALL;
     }
 
+
+    place_food(cells, *width_p, *height_p);
+
     // Add snake
     cells[20 * 2 + 2] = FLAG_SNAKE;
+    head = 42;
 
     return INIT_SUCCESS;
 }
@@ -75,9 +79,13 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
     // TODO: implement!
     
     direction = INPUT_NONE;
-    head = 42;
     g_game_over = 0;
     g_score = 0;    
+
+    if (board_rep != NULL) {
+        return decompress_board_str(cells_p, width_p, height_p, snake_p, board_rep);
+    }
+ 
 
     return initialize_default_board(cells_p, width_p, height_p);
 }
@@ -99,5 +107,71 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
                                             size_t* height_p, snake_t* snake_p,
                                             char* compressed) {
     // TODO: implement!
-    return INIT_UNIMPLEMENTED;
+
+    char* token;
+    char* rest = compressed;
+    int r;
+    int c;
+    int row_count = 0;
+    int snake_count = 0;
+    int global_cell_count = 0;
+
+    
+
+    while ((token = strtok_r(rest, "|", &rest))) {
+        if (token[0] == 'B') {
+            r = token[1];
+            c = token[3];
+            if (token[2] != 'x') {
+                return INIT_ERR_BAD_CHAR;
+            }
+            *cells_p = malloc(r * c * sizeof(int));
+        }
+        else {
+            row_count = row_count + 1;
+            int sum = 0;
+            for (int i = 1; i< (int) strlen(token); i+=2) {
+
+                sum += atoi(&token[i]);
+                if (token[i-1] == 'S' && token[i] == '1') {
+                    snake_count = snake_count + 1;
+                }
+              
+                if (token[i-1] != 'W' && token[i-1] != 'E' && token[i-1] != 'S') {
+                    printf("%c", token[i-1]);
+                    return INIT_ERR_BAD_CHAR;
+                }
+                if (token[i-1] == 'W') {
+                    for (int j = 0; j < token[i]; j++) {
+                        *(cells_p[global_cell_count]) = FLAG_WALL;
+                        global_cell_count++;
+                    }
+                }
+                else if (token[i-1] == 'E') {
+                    for (int j = 0; j < token[i]; j++) {
+                        *(cells_p[global_cell_count]) = FLAG_PLAIN_CELL;
+                        global_cell_count++;
+                    }
+                }
+                else if (token[i-1] == 'S') {
+                    *(cells_p[global_cell_count]) = FLAG_SNAKE;
+                    global_cell_count++;
+                }
+            }
+            if (sum != c) {
+                return INIT_ERR_INCORRECT_DIMENSIONS;
+            }
+        }
+    }
+
+    if (row_count != r) {
+        return INIT_ERR_INCORRECT_DIMENSIONS;
+    }
+    if (snake_count != 1) {
+        return INIT_ERR_WRONG_SNAKE_NUM;
+    }
+
+    
+
+    return INIT_SUCCESS;
 }

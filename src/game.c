@@ -29,6 +29,77 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     // walls, so it does not handle the case where a snake runs off the board.
 
     // TODO: implement!
+
+    if (input != INPUT_NONE) { 
+        direction = input;
+    }
+
+    if (cells[head+1] == FLAG_WALL) {
+        g_game_over = 1;
+    } else if (cells[head+1] == FLAG_FOOD  && direction == INPUT_RIGHT) {
+        g_score = g_score + 1;
+        cells[head+1] = FLAG_SNAKE;
+        cells[head] = FLAG_PLAIN_CELL;
+        head = head + 1;
+        place_food(cells, width, height);
+    } else if (cells[head+20] == FLAG_FOOD  && direction == INPUT_DOWN) {
+        g_score = g_score + 1;
+        cells[head+20] = FLAG_SNAKE;
+        cells[head] = FLAG_PLAIN_CELL;
+        head = head + 20;
+        place_food(cells, width, height);
+    }
+    else if (cells[head-20] == FLAG_FOOD  && direction == INPUT_UP){
+        g_score = g_score + 1;
+        cells[head-20] = FLAG_SNAKE;
+        cells[head] = FLAG_PLAIN_CELL;
+        head = head - 20;
+        place_food(cells, width, height);
+
+    }
+    else if (cells[head-1] == FLAG_FOOD  && direction == INPUT_LEFT) {
+        g_score = g_score + 1;
+        cells[head-1] = FLAG_SNAKE;
+        cells[head] = FLAG_PLAIN_CELL;
+        head = head - 1;
+        place_food(cells, width, height);
+    }
+    else {
+
+        if (direction == INPUT_DOWN) {
+            cells[head+20] = FLAG_SNAKE;
+            cells[head] = FLAG_PLAIN_CELL;
+            head = head + 20;
+        }
+        else if (direction == INPUT_UP) {
+            cells[head-20] = FLAG_SNAKE;
+            cells[head] = FLAG_PLAIN_CELL;
+            head = head - 20;
+        
+        }
+        else if (direction == INPUT_LEFT) {
+            cells[head-1] = FLAG_SNAKE;
+            cells[head] = FLAG_PLAIN_CELL;
+            head = head - 1;
+        }
+        else if (direction == INPUT_RIGHT) {
+            cells[head+1] = FLAG_SNAKE;
+            cells[head] = FLAG_PLAIN_CELL;
+            head = head + 1;
+        }
+        else {
+            cells[head+1] = FLAG_SNAKE;
+            cells[head] = FLAG_PLAIN_CELL;
+            head = head + 1;
+        }
+
+        
+
+
+    }
+
+ 
+
 }
 
 /** Sets a random space on the given board to food.

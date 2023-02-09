@@ -113,6 +113,9 @@ int main(int argc, char** argv) {
     // Check validity of the board before rendering!
     // TODO: Implement (in Part 1C)
     // if ( ? board is not valid ? ) { return EXIT_FAILURE; }
+    if (status != INIT_SUCCESS) {
+        return EXIT_FAILURE;
+    }
 
     // Read in the player's name & save its name and length
     // TODO: Implement (in Part 2B)
@@ -121,10 +124,15 @@ int main(int argc, char** argv) {
     // ? save name_buffer ?
     // ? save mbslen(name_buffer) ?
     initialize_window(width, height);
-
-    usleep(100000);
-    update(cells, width, height, &snake, direction, snake_grows);
-    render_game(cells, width, height);
+    
+    while (g_game_over != 1) {
+      
+        render_game(cells, width, height);
+        usleep(100000);
+        update(cells, width, height, &snake, get_input(), snake_grows);
+    }
     // TODO: implement the game loop here (Part 1A)!
+
     end_game(cells, width, height, &snake);
+    
 }
