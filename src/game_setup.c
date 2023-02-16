@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 // Some handy dandy macros for decompression
 #define E_CAP_HEX 0x45
@@ -56,7 +57,7 @@ enum board_init_status initialize_default_board(int** cells_p, size_t* width_p,
 
     // Add snake
     cells[20 * 2 + 2] = FLAG_SNAKE;
-    head = 42;
+    
 
     return INIT_SUCCESS;
 }
@@ -78,15 +79,20 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
                                        char* board_rep) {
     // TODO: implement!
     
-    direction = INPUT_NONE;
+    snake_p->direction = INPUT_NONE;
+    
     g_game_over = 0;
     g_score = 0;    
+
+    snake_p->body = NULL;
 
     if (board_rep != NULL) {
         return decompress_board_str(cells_p, width_p, height_p, snake_p, board_rep);
     }
- 
 
+    int head = 42;  
+
+    insert_first(&(snake_p->body),&head,sizeof(int));
     return initialize_default_board(cells_p, width_p, height_p);
 }
 
@@ -103,75 +109,119 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
  * (delineated by the `|` character), and read out a letter (E, S or W) a number
  * of times dictated by the number that follows the letter.
  */
+int intlen(int x) {
+    return floor(log10(abs(x))) + 1;
+}
+
+
 enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
                                             size_t* height_p, snake_t* snake_p,
                                             char* compressed) {
-    // TODO: implement!
 
-    char* token;
-    char* rest = compressed;
-    int r;
-    int c;
-    int row_count = 0;
-    int snake_count = 0;
-    int global_cell_count = 0;
 
+    *height_p = atoi(compressed+1);
+
+    *width_p = atoi(strchr(compressed, 'x') +1);
     
+    if (*compressed != 'B') {
+        return INIT_ERR_BAD_CHAR;
+    }
+    if (*(intlen(*height_p) + 1 + compressed) != 'x') {
+        return INIT_ERR_BAD_CHAR;
+    }
 
-    while ((token = strtok_r(rest, "|", &rest))) {
-        if (token[0] == 'B') {
-            r = token[1];
-            c = token[3];
-            if (token[2] != 'x') {
-                return INIT_ERR_BAD_CHAR;
-            }
-            *cells_p = malloc(r * c * sizeof(int));
+
+    int* cells = malloc(*width_p * *height_p * sizeof(int));
+    *cells_p = cells;
+
+    int pos = 0;
+    char* token = strtok(compressed, "|");
+    int totalheight = 0;
+    int snake_num = 0;
+    while (token != NULL) {
+        totalheight++;
+        token = strtok(NULL, "|");
+        if (token == NULL) {
+            totalheight-=1;
+            break;
         }
-        else {
-            row_count = row_count + 1;
-            int sum = 0;
-            for (int i = 1; i< (int) strlen(token); i+=2) {
+        
+        if (totalheight > (int) *height_p) {
+            return INIT_ERR_INCORRECT_DIMENSIONS;
+        }
 
-                sum += atoi(&token[i]);
-                if (token[i-1] == 'S' && token[i] == '1') {
-                    snake_count = snake_count + 1;
-                }
-              
-                if (token[i-1] != 'W' && token[i-1] != 'E' && token[i-1] != 'S') {
-                    printf("%c", token[i-1]);
-                    return INIT_ERR_BAD_CHAR;
-                }
-                if (token[i-1] == 'W') {
-                    for (int j = 0; j < token[i]; j++) {
-                        *(cells_p[global_cell_count]) = FLAG_WALL;
-                        global_cell_count++;
-                    }
-                }
-                else if (token[i-1] == 'E') {
-                    for (int j = 0; j < token[i]; j++) {
-                        *(cells_p[global_cell_count]) = FLAG_PLAIN_CELL;
-                        global_cell_count++;
-                    }
-                }
-                else if (token[i-1] == 'S') {
-                    *(cells_p[global_cell_count]) = FLAG_SNAKE;
-                    global_cell_count++;
-                }
-            }
-            if (sum != c) {
+        char* temp = token;
+
+      
+        int totalwidth = 0;
+        int n;
+        while (*temp != '\0') {
+            
+            if (totalwidth > (int) *width_p) {
                 return INIT_ERR_INCORRECT_DIMENSIONS;
             }
-        }
+            n  = atoi(temp+1);
+            switch(*temp) {
+                case 'W': ;
+
+                    for (int i = pos; i < pos+n; i++) {
+                        cells[i] = FLAG_WALL;
+                    }
+                    totalwidth += n;
+                    pos = pos+n;
+
+                    break;
+                case 'E': ;
+                    for (int i = pos; i < pos+n; i++) {
+                        cells[i] = FLAG_PLAIN_CELL;
+                    }
+                    totalwidth += n;
+                    pos = pos+n;
+
+                    break;
+                case 'S': ;
+
+                    snake_num++;
+                    if (snake_num > 1) {
+                        return INIT_ERR_WRONG_SNAKE_NUM;
+                    }
+                    for (int i = pos; i < pos+n; i++) {
+                        if (n > 1) {
+                            return INIT_ERR_WRONG_SNAKE_NUM;
+                        }
+                        insert_first(&(snake_p->body),&i,sizeof(int));
+                        cells[i] = FLAG_SNAKE;
+                    }
+                    totalwidth += n;
+
+                    pos = pos+n;
+                    
+                    break;
+                default:
+                    return INIT_ERR_BAD_CHAR;
+            }   
+            temp += intlen(n) + 1;
+
+            if (*temp == '\0') {
+                if (totalwidth != (int) *width_p) {
+                    return INIT_ERR_INCORRECT_DIMENSIONS;
+                }
+            }
+
+        }      
+
     }
 
-    if (row_count != r) {
-        return INIT_ERR_INCORRECT_DIMENSIONS;
-    }
-    if (snake_count != 1) {
-        return INIT_ERR_WRONG_SNAKE_NUM;
-    }
 
     
 
+    if (totalheight < (int) *height_p) {
+        return INIT_ERR_INCORRECT_DIMENSIONS;
+    }
+    if (snake_num < 1) {
+        return INIT_ERR_WRONG_SNAKE_NUM;
+    }
+    place_food(cells, *width_p, *height_p);
     return INIT_SUCCESS;
+
 }

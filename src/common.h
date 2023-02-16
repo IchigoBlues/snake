@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include <stddef.h>
+#include "linked_list.h"
 
 // Let's see if we can keep this as simple as possible, lest we intimidate
 // students looking through the provided code.
@@ -22,8 +23,8 @@
 enum input_key { INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_NONE };
 
 // TODO: declare global variables needed for your snake (as `extern`)! (part 1A)
-extern enum input_key direction;
-extern int head;
+// extern enum input_key direction;
+// extern int head;
 /** Global variables for game status.
  *
  * `g_` prefix used by convention to emphasize that these are global.
@@ -43,6 +44,8 @@ extern int g_score;      // game score: 1 point for every food eaten
  *  - None yet!
  */
 typedef struct snake {
+    node_t* body;
+    enum input_key direction;
     // TODO: Define your snake struct! (in 2A)
     // Store any necessary information about your snake here.
 } snake_t;
